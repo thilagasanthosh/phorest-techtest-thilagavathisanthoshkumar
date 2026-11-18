@@ -164,3 +164,13 @@ TDD cycle for every task: failing test (or failing check) → minimal change →
 - [ ] The diff has been reviewed.
 - [ ] The PR is open with `Closes #1`, and the Issue 1 checkboxes are ticked.
 - [ ] NFR-16's one-command startup is noted as pending Issue 6.
+
+## 7. Implementation notes (deviations found while building)
+
+- `fmt-maven-plugin` 2.27.0 does not exist on Maven Central; pinned 2.29.
+- The plugin's `check` goal is not bound to `validate` by default; the execution now sets `<phase>validate</phase>`.
+- google-java-format crashes on JDK 27 (`NoSuchFieldError ... endPositions`); Maven must run on JDK 21. Documented in CLAUDE.md.
+- CRLF Java files pass `fmt:check`, so no `*.java eol=lf` rule was added. `.githooks/*` is pinned to LF.
+- `mvnw` was committed without the executable bit; fixed for the Linux CI runner.
+- Docker is not installed on the dev machine, so `FruitmachineApplicationTests` and the `mysql:8` pin were not run locally. The first CI run is their first real execution.
+- Not done yet: Task 4 (branch protection, needs approval) and pushing the branch / opening the PR.

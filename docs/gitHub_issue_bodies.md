@@ -22,7 +22,6 @@ An empty but production-shaped project with tests, formatting, CI and Claude rul
 - [ ] Spring Boot project, packages api / application / domain / infrastructure; JUnit 5, Mockito, Spring Boot Test, Testcontainers MySQL, Flyway, Spring Data JPA, validation, Actuator
 - [ ] fmt-maven-plugin: format locally, check in CI
 - [ ] GitHub Actions on every push and PR; main protected with required checks
-- [ ] ArchUnit test: domain imports no Spring or JPA
 - [ ] Pre-commit hook running the formatter
 - [ ] CLAUDE.md: /init output + Karpathy guidelines + project rules (TDD, formatting, domain purity, Testcontainers, branch/PR naming, decisions D1-D11)
 
