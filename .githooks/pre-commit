@@ -1,0 +1,18 @@
+#!/bin/sh
+# Formats staged Java files. Aborts the commit if formatting changed any of them,
+# so the formatted result can be reviewed and re-staged (keeps `git add -p` safe).
+# Enable once per clone: git config core.hooksPath .githooks
+
+staged=$(git diff --cached --name-only --diff-filter=ACM -- '*.java')
+[ -z "$staged" ] && exit 0
+
+before=$(for f in $staged; do git hash-object "$f"; done)
+
+./mvnw -q -B fmt:format || { echo "pre-commit: formatter failed" >&2; exit 1; }
+
+after=$(for f in $staged; do git hash-object "$f"; done)
+
+if [ "$before" != "$after" ]; then
+  echo "pre-commit: files were reformatted. Review them, 'git add' them, then commit again." >&2
+  exit 1
+fi
