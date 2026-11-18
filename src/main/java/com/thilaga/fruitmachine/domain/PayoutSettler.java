@@ -27,12 +27,8 @@ public final class PayoutSettler {
     // A jackpot pays the entire float, so shortfall is always 0 here - this is how BR-06/AC-24's
     // "a jackpot never creates free plays" falls out, with no special-case branch needed.
     long shortfall = nominal - paid;
-    long freePlaysEarned = shortfall == 0 ? 0 : ceilDiv(shortfall, playCostPence);
+    long freePlaysEarned = shortfall == 0 ? 0 : Math.ceilDiv(shortfall, playCostPence);
 
     return new Settlement(paid, freePlaysEarned, floatAfterStake - paid);
-  }
-
-  private static long ceilDiv(long numerator, long denominator) {
-    return (numerator + denominator - 1) / denominator;
   }
 }

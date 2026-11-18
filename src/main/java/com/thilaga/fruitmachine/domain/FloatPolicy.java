@@ -6,4 +6,9 @@ public interface FloatPolicy {
   boolean canPlay(long floatPence, long playCostPence);
 
   MachineStatus status(long floatPence, long playCostPence);
+
+  /** Config-time invariant this policy imposes on a starting float, or null if none. */
+  default String validateStartingFloat(long startingFloatPence, long playCostPence) {
+    return null;
+  }
 }

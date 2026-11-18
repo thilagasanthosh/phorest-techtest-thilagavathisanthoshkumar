@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,6 +61,23 @@ class MachineConfigTest {
                     FloatPolicyType.MIN_RESERVE));
 
     assertTrue(ex.errors().stream().anyMatch(m -> m.contains("duplicates")));
+  }
+
+  @Test
+  void rejectsNullColour() {
+    InvalidMachineConfigException ex =
+        assertThrows(
+            InvalidMachineConfigException.class,
+            () ->
+                MachineConfig.of(
+                    4,
+                    Arrays.asList("black", null, "green", "yellow"),
+                    2,
+                    100,
+                    1_000,
+                    FloatPolicyType.MIN_RESERVE));
+
+    assertTrue(ex.errors().stream().anyMatch(m -> m.contains("must not contain null")));
   }
 
   @Test

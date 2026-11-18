@@ -2,6 +2,7 @@ package com.thilaga.fruitmachine.domain;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -30,6 +31,8 @@ public record MachineConfig(
     }
     if (colours == null || colours.isEmpty()) {
       errors.add("colours must not be empty");
+    } else if (colours.stream().anyMatch(Objects::isNull)) {
+      errors.add("colours must not contain null");
     } else if (Set.copyOf(colours).size() != colours.size()) {
       errors.add("colours must not contain duplicates");
     }
@@ -44,14 +47,12 @@ public record MachineConfig(
     }
     if (floatPolicyType == null) {
       errors.add("floatPolicyType must not be null");
-    } else if (floatPolicyType == FloatPolicyType.MIN_RESERVE
-        && playCostPence > 0
-        && startingFloatPence >= 0
-        && startingFloatPence < MinimumReservePolicy.RESERVE_MULTIPLIER * playCostPence) {
-      errors.add(
-          "startingFloatPence must be at least "
-              + MinimumReservePolicy.RESERVE_MULTIPLIER
-              + " x playCostPence under MIN_RESERVE");
+    } else if (playCostPence > 0 && startingFloatPence >= 0) {
+      String policyError =
+          floatPolicyType.toPolicy().validateStartingFloat(startingFloatPence, playCostPence);
+      if (policyError != null) {
+        errors.add(policyError);
+      }
     }
 
     if (!errors.isEmpty()) {

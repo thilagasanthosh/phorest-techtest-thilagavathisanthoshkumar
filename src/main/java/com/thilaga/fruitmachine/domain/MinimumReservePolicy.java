@@ -15,4 +15,14 @@ public final class MinimumReservePolicy implements FloatPolicy {
   public MachineStatus status(long floatPence, long playCostPence) {
     return canPlay(floatPence, playCostPence) ? MachineStatus.ACTIVE : MachineStatus.NEEDS_REFILL;
   }
+
+  @Override
+  public String validateStartingFloat(long startingFloatPence, long playCostPence) {
+    if (startingFloatPence < RESERVE_MULTIPLIER * playCostPence) {
+      return "startingFloatPence must be at least "
+          + RESERVE_MULTIPLIER
+          + " x playCostPence under MIN_RESERVE";
+    }
+    return null;
+  }
 }
