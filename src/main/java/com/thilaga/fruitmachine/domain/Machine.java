@@ -25,11 +25,12 @@ public final class Machine {
   }
 
   public PlayResult play(boolean useFreePlay, SpinGenerator generator) {
-    if (useFreePlay && freePlayBalance == 0) {
-      throw new NoFreePlayAvailableException();
-    }
+    // AD-01/SD-02: the float policy is checked first, then the free-play balance.
     if (!policy.canPlay(floatPence, config.playCostPence())) {
       throw new MachineNeedsRefillException();
+    }
+    if (useFreePlay && freePlayBalance == 0) {
+      throw new NoFreePlayAvailableException();
     }
 
     if (useFreePlay) {
@@ -48,6 +49,7 @@ public final class Machine {
     return new PlayResult(
         spin,
         prize,
+        settlement.nominalPence(),
         settlement.paidPence(),
         settlement.freePlaysEarned(),
         freePlayBalance,
@@ -56,6 +58,9 @@ public final class Machine {
   }
 
   public void refill(long amountPence) {
+    if (amountPence <= 0) {
+      throw new IllegalArgumentException("refill amount must be greater than 0");
+    }
     floatPence += amountPence;
   }
 
@@ -73,5 +78,10 @@ public final class Machine {
 
   public MachineStatus status() {
     return policy.status(floatPence, config.playCostPence());
+  }
+
+  /** The float the policy holds back before a play (D10); 0 under NONE. */
+  public long reservePence() {
+    return policy.reservePence(config.playCostPence());
   }
 }

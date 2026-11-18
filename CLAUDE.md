@@ -1,6 +1,9 @@
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+
 
 ## Project status
 
@@ -296,3 +299,4 @@ change separately. Never echo back unchanged code the user already has.
 Code blocks, file paths, commands, error messages: always written in full.
 Security warnings and destructive action confirmations: use full clarity.
 <!-- /cce-block -->
+Be concise with all of your responses

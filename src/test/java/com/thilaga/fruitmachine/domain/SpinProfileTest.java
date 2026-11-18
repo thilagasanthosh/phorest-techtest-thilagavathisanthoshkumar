@@ -42,6 +42,11 @@ class SpinProfileTest {
       spin[i] = i % 1000;
     }
 
+    // Warm up the JIT first: an untimed cold call pays classloading/interpreter cost that has
+    // nothing to do with the O(slots) budget this test checks, and that cost is what makes this
+    // flaky on a shared CI runner (NFR-01 is about steady-state performance, not JVM startup).
+    SpinProfile.of(spin);
+
     long start = System.nanoTime();
     SpinProfile.of(spin);
     long elapsedMillis = (System.nanoTime() - start) / 1_000_000;

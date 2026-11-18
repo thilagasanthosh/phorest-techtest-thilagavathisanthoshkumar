@@ -12,6 +12,11 @@ public final class MinimumReservePolicy implements FloatPolicy {
   }
 
   @Override
+  public long reservePence(long playCostPence) {
+    return RESERVE_MULTIPLIER * playCostPence;
+  }
+
+  @Override
   public MachineStatus status(long floatPence, long playCostPence) {
     return canPlay(floatPence, playCostPence) ? MachineStatus.ACTIVE : MachineStatus.NEEDS_REFILL;
   }

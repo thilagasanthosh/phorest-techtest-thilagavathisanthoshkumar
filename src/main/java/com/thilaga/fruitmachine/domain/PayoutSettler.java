@@ -29,6 +29,6 @@ public final class PayoutSettler {
     long shortfall = nominal - paid;
     long freePlaysEarned = shortfall == 0 ? 0 : Math.ceilDiv(shortfall, playCostPence);
 
-    return new Settlement(paid, freePlaysEarned, floatAfterStake - paid);
+    return new Settlement(paid, nominal, freePlaysEarned, floatAfterStake - paid);
   }
 }
