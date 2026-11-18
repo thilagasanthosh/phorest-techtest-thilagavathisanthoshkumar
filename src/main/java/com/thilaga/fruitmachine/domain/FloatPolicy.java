@@ -7,6 +7,11 @@ public interface FloatPolicy {
 
   MachineStatus status(long floatPence, long playCostPence);
 
+  /** Float the policy holds back before a play (D10), or 0 if it holds none. */
+  default long reservePence(long playCostPence) {
+    return 0;
+  }
+
   /** Config-time invariant this policy imposes on a starting float, or null if none. */
   default String validateStartingFloat(long startingFloatPence, long playCostPence) {
     return null;

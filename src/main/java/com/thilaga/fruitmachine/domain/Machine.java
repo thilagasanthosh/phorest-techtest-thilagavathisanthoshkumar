@@ -78,4 +78,9 @@ public final class Machine {
   public MachineStatus status() {
     return policy.status(floatPence, config.playCostPence());
   }
+
+  /** The float the policy holds back before a play (D10); 0 under NONE. */
+  public long reservePence() {
+    return policy.reservePence(config.playCostPence());
+  }
 }
