@@ -15,13 +15,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
- * Maps errors to RFC 7807 problem details with the design 5.4 types (NFR-12). Any exception not
- * listed here, including Spring's own, becomes 500 without a stack trace (accepted decision).
+ * Maps errors to RFC 7807 problem details with the design 5.4 types (NFR-12). Spring's own MVC
+ * errors (404, 405, 415) keep their status; any other exception becomes 500 without a stack trace.
  */
 @RestControllerAdvice
 class ApiExceptionHandler {
@@ -39,6 +44,11 @@ class ApiExceptionHandler {
         e.getBindingResult().getFieldErrors().stream()
             .map(f -> new Fault(f.getField(), f.getDefaultMessage()))
             .toList());
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  ProblemDetail badPathValue(MethodArgumentTypeMismatchException e) {
+    return validation(List.of(new Fault(e.getName(), "invalid value")));
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -82,6 +92,16 @@ class ApiExceptionHandler {
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
         .header(HttpHeaders.RETRY_AFTER, "1")
         .body(p);
+  }
+
+  @ExceptionHandler({
+    NoResourceFoundException.class,
+    HttpRequestMethodNotSupportedException.class,
+    HttpMediaTypeNotSupportedException.class
+  })
+  ResponseEntity<ProblemDetail> springMvcError(Exception e) {
+    ErrorResponse r = (ErrorResponse) e;
+    return ResponseEntity.status(r.getStatusCode()).headers(r.getHeaders()).body(r.getBody());
   }
 
   @ExceptionHandler(Exception.class)

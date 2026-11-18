@@ -37,6 +37,24 @@ class MachineReadApiTest extends AbstractApiTest {
   }
 
   @Test
+  void malformedIdIsBadRequest() throws Exception {
+    getJson(BASE + "/not-a-uuid")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.type").value("validation-error"));
+  }
+
+  @Test
+  void unknownRouteIsNotFound() throws Exception {
+    getJson("/api/v1/nope").andExpect(status().isNotFound());
+  }
+
+  @Test
+  void wrongMethodIsMethodNotAllowed() throws Exception {
+    mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(BASE))
+        .andExpect(status().isMethodNotAllowed());
+  }
+
+  @Test
   void noneMachineAtZeroFloatIsAlwaysActive() throws Exception { // BR-09
     String id = createMachine(NONE_EMPTY);
 
