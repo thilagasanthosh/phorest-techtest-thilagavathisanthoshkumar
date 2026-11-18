@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class MachineTest {
+
+  private static final UUID PLAY_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
   private static MachineConfig minReserveConfig(long playCostPence, long startingFloatPence) {
     return MachineConfig.of(
@@ -34,7 +37,7 @@ class MachineTest {
     Machine machine = new Machine(minReserveConfig(100, 1_000));
     int[] smallPrizeSpin = {0, 0, 1, 2}; // run of 2 >= k, distinct colours (3) != slots (4)
 
-    PlayResult result = machine.play(false, new FixedSpinGenerator(smallPrizeSpin));
+    PlayResult result = machine.play(PLAY_ID, false, new FixedSpinGenerator(smallPrizeSpin));
 
     assertArrayEquals(smallPrizeSpin, result.spin());
     assertEquals(PrizeType.SMALL_PRIZE, result.prize());
@@ -52,10 +55,24 @@ class MachineTest {
 
     assertThrows(
         MachineNeedsRefillException.class,
-        () -> machine.play(false, new FixedSpinGenerator(0, 1, 0, 1)));
+        () -> machine.play(PLAY_ID, false, new FixedSpinGenerator(0, 1, 0, 1)));
 
     assertEquals(499, machine.floatPence());
     assertEquals(0, machine.freePlayBalance());
+  }
+
+  @Test
+  void refusalCarriesFloatAndReserve() {
+    // UC-10: the refusal states the float and the reserve.
+    Machine machine = new Machine(minReserveConfig(100, 1_000), 499, 0);
+
+    MachineNeedsRefillException e =
+        assertThrows(
+            MachineNeedsRefillException.class,
+            () -> machine.play(PLAY_ID, false, new FixedSpinGenerator(0, 1, 0, 1)));
+
+    assertEquals(499, e.floatPence());
+    assertEquals(500, e.reservePence());
   }
 
   @Test
@@ -64,7 +81,7 @@ class MachineTest {
     Machine machine = new Machine(minReserveConfig(100, 1_000), 500, 0);
     int[] smallPrizeSpin = {0, 0, 1, 2};
 
-    PlayResult result = machine.play(false, new FixedSpinGenerator(smallPrizeSpin));
+    PlayResult result = machine.play(PLAY_ID, false, new FixedSpinGenerator(smallPrizeSpin));
 
     assertEquals(500, result.paidPence());
     assertEquals(0, result.freePlaysEarned());
@@ -99,7 +116,7 @@ class MachineTest {
     Machine machine = new Machine(noneConfig(100, 300));
     int[] smallPrizeSpin = {0, 0, 1, 2};
 
-    PlayResult result = machine.play(false, new FixedSpinGenerator(smallPrizeSpin));
+    PlayResult result = machine.play(PLAY_ID, false, new FixedSpinGenerator(smallPrizeSpin));
 
     assertEquals(400, result.paidPence());
     assertEquals(1, result.freePlaysEarned());
@@ -113,7 +130,7 @@ class MachineTest {
     Machine machine = new Machine(noneConfig(100, 250));
     int[] smallPrizeSpin = {0, 0, 1, 2};
 
-    PlayResult result = machine.play(false, new FixedSpinGenerator(smallPrizeSpin));
+    PlayResult result = machine.play(PLAY_ID, false, new FixedSpinGenerator(smallPrizeSpin));
 
     assertEquals(2, result.freePlaysEarned());
   }
@@ -124,7 +141,7 @@ class MachineTest {
     Machine machine = new Machine(noneConfig(100, 0), 0, 1);
     int[] jackpotSpin = {0, 0, 0, 0};
 
-    PlayResult result = machine.play(true, new FixedSpinGenerator(jackpotSpin));
+    PlayResult result = machine.play(PLAY_ID, true, new FixedSpinGenerator(jackpotSpin));
 
     assertEquals(PrizeType.JACKPOT, result.prize());
     assertEquals(0, result.paidPence());
@@ -138,7 +155,7 @@ class MachineTest {
     Machine machine = new Machine(noneConfig(100, 0), 0, 1);
     int[] smallPrizeSpin = {0, 0, 1, 2};
 
-    PlayResult result = machine.play(true, new FixedSpinGenerator(smallPrizeSpin));
+    PlayResult result = machine.play(PLAY_ID, true, new FixedSpinGenerator(smallPrizeSpin));
 
     assertEquals(0, result.paidPence()); // no stake added, nothing available to pay
     assertEquals(5, result.freePlaysEarned()); // ceil(500 / 100)
@@ -152,7 +169,7 @@ class MachineTest {
 
     assertThrows(
         NoFreePlayAvailableException.class,
-        () -> machine.play(true, new FixedSpinGenerator(0, 1, 0, 1)));
+        () -> machine.play(PLAY_ID, true, new FixedSpinGenerator(0, 1, 0, 1)));
   }
 
   @Test
@@ -162,13 +179,13 @@ class MachineTest {
 
     assertThrows(
         MachineNeedsRefillException.class,
-        () -> machine.play(true, new FixedSpinGenerator(0, 1, 0, 1)));
+        () -> machine.play(PLAY_ID, true, new FixedSpinGenerator(0, 1, 0, 1)));
     assertEquals(1, machine.freePlayBalance());
 
     machine.refill(600); // float is now 1,000p, at the reserve.
 
     int[] noWinSpin = {0, 1, 0, 1};
-    PlayResult result = machine.play(true, new FixedSpinGenerator(noWinSpin));
+    PlayResult result = machine.play(PLAY_ID, true, new FixedSpinGenerator(noWinSpin));
 
     assertEquals(PrizeType.NONE, result.prize());
     assertEquals(0, machine.freePlayBalance());
@@ -181,6 +198,6 @@ class MachineTest {
 
     assertThrows(
         MachineNeedsRefillException.class,
-        () -> machine.play(true, new FixedSpinGenerator(0, 1, 0, 1)));
+        () -> machine.play(PLAY_ID, true, new FixedSpinGenerator(0, 1, 0, 1)));
   }
 }

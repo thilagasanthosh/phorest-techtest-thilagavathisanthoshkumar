@@ -136,4 +136,47 @@ class MachineConfigTest {
     assertEquals(50, config.playCostPence());
     assertEquals(1_000, config.startingFloatPence());
   }
+
+  @Test
+  void acceptsSlotAndColourCountsAtNfr02Limits() {
+    // NFR-02: 10,000 slots and 1,000 colours are the supported maximum.
+    List<String> colours =
+        IntStream.range(0, 1_000).mapToObj(i -> "C" + i).collect(Collectors.toList());
+
+    MachineConfig config =
+        MachineConfig.of(10_000, colours, 2, 100, 1_000, FloatPolicyType.MIN_RESERVE);
+
+    assertEquals(10_000, config.slots());
+    assertEquals(1_000, config.colours().size());
+  }
+
+  @Test
+  void rejectsSlotCountAboveNfr02Limit() {
+    InvalidMachineConfigException ex =
+        assertThrows(
+            InvalidMachineConfigException.class,
+            () ->
+                MachineConfig.of(
+                    10_001,
+                    MachineConfig.DEFAULT_COLOURS,
+                    2,
+                    100,
+                    1_000,
+                    FloatPolicyType.MIN_RESERVE));
+
+    assertTrue(ex.errors().stream().anyMatch(m -> m.contains("slots must be at most")));
+  }
+
+  @Test
+  void rejectsColourCountAboveNfr02Limit() {
+    List<String> colours =
+        IntStream.range(0, 1_001).mapToObj(i -> "C" + i).collect(Collectors.toList());
+
+    InvalidMachineConfigException ex =
+        assertThrows(
+            InvalidMachineConfigException.class,
+            () -> MachineConfig.of(1_001, colours, 2, 100, 1_000, FloatPolicyType.MIN_RESERVE));
+
+    assertTrue(ex.errors().stream().anyMatch(m -> m.contains("colours must be at most")));
+  }
 }

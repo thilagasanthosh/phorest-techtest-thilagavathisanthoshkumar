@@ -21,6 +21,11 @@ public record MachineConfig(
   public static final List<String> DEFAULT_COLOURS = List.of("black", "white", "green", "yellow");
   public static final int DEFAULT_SLOTS = 4;
   public static final int DEFAULT_K = 2;
+
+  /** NFR-02: supported upper limits. */
+  public static final int MAX_SLOTS = 10_000;
+
+  public static final int MAX_COLOURS = 1_000;
   public static final FloatPolicyType DEFAULT_POLICY = FloatPolicyType.MIN_RESERVE;
 
   public MachineConfig {
@@ -28,6 +33,8 @@ public record MachineConfig(
 
     if (slots < 1) {
       errors.add("slots must be at least 1");
+    } else if (slots > MAX_SLOTS) {
+      errors.add("slots must be at most " + MAX_SLOTS);
     }
     if (colours == null || colours.isEmpty()) {
       errors.add("colours must not be empty");
@@ -35,6 +42,8 @@ public record MachineConfig(
       errors.add("colours must not contain null");
     } else if (Set.copyOf(colours).size() != colours.size()) {
       errors.add("colours must not contain duplicates");
+    } else if (colours.size() > MAX_COLOURS) {
+      errors.add("colours must be at most " + MAX_COLOURS);
     }
     if (k < 1 || k > slots) {
       errors.add("k must be between 1 and slots");

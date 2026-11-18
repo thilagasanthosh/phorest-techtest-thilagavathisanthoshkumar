@@ -1,5 +1,7 @@
 package com.thilaga.fruitmachine.domain;
 
+import java.util.UUID;
+
 /** One configured fruit machine: its float, free-play balance, and the play it offers. */
 public final class Machine {
 
@@ -24,10 +26,10 @@ public final class Machine {
     this.freePlayBalance = freePlayBalance;
   }
 
-  public PlayResult play(boolean useFreePlay, SpinGenerator generator) {
+  public PlayResult play(UUID playId, boolean useFreePlay, SpinGenerator generator) {
     // AD-01/SD-02: the float policy is checked first, then the free-play balance.
     if (!policy.canPlay(floatPence, config.playCostPence())) {
-      throw new MachineNeedsRefillException();
+      throw new MachineNeedsRefillException(floatPence, reservePence());
     }
     if (useFreePlay && freePlayBalance == 0) {
       throw new NoFreePlayAvailableException();
@@ -47,6 +49,7 @@ public final class Machine {
     freePlayBalance += settlement.freePlaysEarned();
 
     return new PlayResult(
+        playId,
         spin,
         prize,
         settlement.nominalPence(),
@@ -54,6 +57,7 @@ public final class Machine {
         settlement.freePlaysEarned(),
         freePlayBalance,
         floatPence,
+        useFreePlay,
         policy.status(floatPence, config.playCostPence()));
   }
 
