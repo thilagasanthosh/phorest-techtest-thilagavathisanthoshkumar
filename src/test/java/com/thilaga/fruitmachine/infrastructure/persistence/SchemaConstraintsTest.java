@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.thilaga.fruitmachine.TestTables;
 import com.thilaga.fruitmachine.TestcontainersConfiguration;
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
@@ -36,9 +37,7 @@ class SchemaConstraintsTest {
 
   @BeforeEach
   void clearTables() {
-    jdbc.update("DELETE FROM refill");
-    jdbc.update("DELETE FROM play");
-    jdbc.update("DELETE FROM machine");
+    TestTables.clearAll(jdbc);
   }
 
   @Test

@@ -37,8 +37,7 @@ public class MachineService {
    */
   @Transactional
   public PlayResult play(UUID id, boolean useFreePlay) {
-    Machine machine =
-        repository.findForUpdate(id).orElseThrow(() -> new MachineNotFoundException(id));
+    Machine machine = findForUpdateOrThrow(id);
     PlayResult result = machine.play(useFreePlay, spinGenerator);
     repository.save(id, machine);
     repository.recordPlay(id, result, useFreePlay);
@@ -50,8 +49,7 @@ public class MachineService {
    */
   @Transactional
   public void refill(UUID id, long amountPence) {
-    Machine machine =
-        repository.findForUpdate(id).orElseThrow(() -> new MachineNotFoundException(id));
+    Machine machine = findForUpdateOrThrow(id);
     machine.refill(amountPence);
     repository.save(id, machine);
     repository.recordRefill(id, amountPence, machine.floatPence());
@@ -61,5 +59,9 @@ public class MachineService {
   @Transactional(readOnly = true)
   public MachineState read(UUID id) {
     return repository.find(id).orElseThrow(() -> new MachineNotFoundException(id));
+  }
+
+  private Machine findForUpdateOrThrow(UUID id) {
+    return repository.findForUpdate(id).orElseThrow(() -> new MachineNotFoundException(id));
   }
 }

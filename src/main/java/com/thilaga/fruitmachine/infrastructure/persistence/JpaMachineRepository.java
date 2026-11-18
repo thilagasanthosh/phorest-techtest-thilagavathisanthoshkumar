@@ -58,11 +58,14 @@ class JpaMachineRepository implements MachineRepository {
       try {
         rows =
             entityManager
+                // UUID binding relies on Hibernate's default UUID<->BINARY(16) mapping matching
+                // the entity attribute's mapping (no explicit JDBC type set here); upgrade to an
+                // explicit type if the two ever diverge.
                 .createNativeQuery(LOCK_SQL, MachineEntity.class)
                 .setParameter(1, id)
                 .getResultList();
       } finally {
-        entityManager.createNativeQuery(RESET_LOCK_WAIT).executeUpdate();
+        resetLockWaitQuietly();
       }
       return rows.stream().findFirst().map(entity -> MachineMapper.toState(entity).machine());
     } catch (PersistenceException e) {
@@ -70,6 +73,19 @@ class JpaMachineRepository implements MachineRepository {
         throw new MachineBusyException(e);
       }
       throw e;
+    }
+  }
+
+  /**
+   * Best-effort reset: after a deadlock, MySQL has already rolled back the connection, so this
+   * statement can itself fail. It must never replace the real lock/deadlock exception from the try
+   * block above with its own.
+   */
+  private void resetLockWaitQuietly() {
+    try {
+      entityManager.createNativeQuery(RESET_LOCK_WAIT).executeUpdate();
+    } catch (PersistenceException ignored) {
+      // The original exception from the locking read, if any, is what the caller must see.
     }
   }
 

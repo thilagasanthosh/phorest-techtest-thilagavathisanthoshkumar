@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+import com.thilaga.fruitmachine.TestTables;
 import com.thilaga.fruitmachine.TestcontainersConfiguration;
 import com.thilaga.fruitmachine.domain.FloatPolicyType;
 import com.thilaga.fruitmachine.domain.Machine;
@@ -60,9 +61,7 @@ class MachineServiceTest {
 
   @BeforeEach
   void clearTables() {
-    jdbc.update("DELETE FROM refill");
-    jdbc.update("DELETE FROM play");
-    jdbc.update("DELETE FROM machine");
+    TestTables.clearAll(jdbc);
   }
 
   @Test

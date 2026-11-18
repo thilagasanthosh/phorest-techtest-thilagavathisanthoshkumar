@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
 import com.thilaga.fruitmachine.FruitmachineApplication;
+import com.thilaga.fruitmachine.TestTables;
 import com.thilaga.fruitmachine.TestcontainersConfiguration;
 import com.thilaga.fruitmachine.domain.FloatPolicyType;
 import com.thilaga.fruitmachine.domain.MachineConfig;
@@ -52,9 +53,7 @@ class MachineHistoryTest {
 
   @BeforeEach
   void clearTables() {
-    jdbc.update("DELETE FROM refill");
-    jdbc.update("DELETE FROM play");
-    jdbc.update("DELETE FROM machine");
+    TestTables.clearAll(jdbc);
   }
 
   @Test

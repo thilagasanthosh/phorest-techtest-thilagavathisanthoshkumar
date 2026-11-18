@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.thilaga.fruitmachine.TestTables;
 import com.thilaga.fruitmachine.TestcontainersConfiguration;
 import com.thilaga.fruitmachine.domain.FloatPolicyType;
 import com.thilaga.fruitmachine.domain.Machine;
@@ -50,9 +51,7 @@ class JpaMachineRepositoryTest {
 
   @BeforeEach
   void clearTables() {
-    jdbc.update("DELETE FROM refill");
-    jdbc.update("DELETE FROM play");
-    jdbc.update("DELETE FROM machine");
+    TestTables.clearAll(jdbc);
   }
 
   @AfterEach
