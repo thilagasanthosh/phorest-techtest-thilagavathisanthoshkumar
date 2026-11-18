@@ -21,7 +21,6 @@ public record MachineConfig(
   public static final int DEFAULT_SLOTS = 4;
   public static final int DEFAULT_K = 2;
   public static final FloatPolicyType DEFAULT_POLICY = FloatPolicyType.MIN_RESERVE;
-  private static final int RESERVE_MULTIPLIER = 5;
 
   public MachineConfig {
     List<String> errors = new ArrayList<>();
@@ -48,10 +47,10 @@ public record MachineConfig(
     } else if (floatPolicyType == FloatPolicyType.MIN_RESERVE
         && playCostPence > 0
         && startingFloatPence >= 0
-        && startingFloatPence < RESERVE_MULTIPLIER * playCostPence) {
+        && startingFloatPence < MinimumReservePolicy.RESERVE_MULTIPLIER * playCostPence) {
       errors.add(
           "startingFloatPence must be at least "
-              + RESERVE_MULTIPLIER
+              + MinimumReservePolicy.RESERVE_MULTIPLIER
               + " x playCostPence under MIN_RESERVE");
     }
 
