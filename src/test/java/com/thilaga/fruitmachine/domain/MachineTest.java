@@ -52,7 +52,7 @@ class MachineTest {
 
     assertThrows(
         MachineNeedsRefillException.class,
-        () -> machine.play(false, new SecureRandomSpinGenerator()));
+        () -> machine.play(false, new FixedSpinGenerator(0, 1, 0, 1)));
 
     assertEquals(499, machine.floatPence());
     assertEquals(0, machine.freePlayBalance());
@@ -152,7 +152,7 @@ class MachineTest {
 
     assertThrows(
         NoFreePlayAvailableException.class,
-        () -> machine.play(true, new SecureRandomSpinGenerator()));
+        () -> machine.play(true, new FixedSpinGenerator(0, 1, 0, 1)));
   }
 
   @Test
@@ -162,7 +162,7 @@ class MachineTest {
 
     assertThrows(
         MachineNeedsRefillException.class,
-        () -> machine.play(true, new SecureRandomSpinGenerator()));
+        () -> machine.play(true, new FixedSpinGenerator(0, 1, 0, 1)));
     assertEquals(1, machine.freePlayBalance());
 
     machine.refill(600); // float is now 1,000p, at the reserve.
@@ -172,5 +172,15 @@ class MachineTest {
 
     assertEquals(PrizeType.NONE, result.prize());
     assertEquals(0, machine.freePlayBalance());
+  }
+
+  @Test
+  void freePlayWithLowFloatIsRefusedForTheFloat_notForNoCredit() {
+    // AD-01/SD-02: the float policy is checked before the free-play balance.
+    Machine machine = new Machine(minReserveConfig(100, 1_000), 400, 0);
+
+    assertThrows(
+        MachineNeedsRefillException.class,
+        () -> machine.play(true, new FixedSpinGenerator(0, 1, 0, 1)));
   }
 }

@@ -1,9 +1,10 @@
-package com.thilaga.fruitmachine.domain;
+package com.thilaga.fruitmachine.infrastructure;
 
+import com.thilaga.fruitmachine.domain.SpinGenerator;
 import java.security.SecureRandom;
 
 /** Production {@link SpinGenerator}: every colour is equally likely in every slot (BR-03). */
-public final class SecureRandomSpinGenerator implements SpinGenerator {
+public final class RandomSpinGenerator implements SpinGenerator {
 
   private final SecureRandom random = new SecureRandom();
 

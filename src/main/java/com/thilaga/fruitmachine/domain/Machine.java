@@ -25,11 +25,12 @@ public final class Machine {
   }
 
   public PlayResult play(boolean useFreePlay, SpinGenerator generator) {
-    if (useFreePlay && freePlayBalance == 0) {
-      throw new NoFreePlayAvailableException();
-    }
+    // AD-01/SD-02: the float policy is checked first, then the free-play balance.
     if (!policy.canPlay(floatPence, config.playCostPence())) {
       throw new MachineNeedsRefillException();
+    }
+    if (useFreePlay && freePlayBalance == 0) {
+      throw new NoFreePlayAvailableException();
     }
 
     if (useFreePlay) {
