@@ -94,6 +94,36 @@ class MachineInteractionApiTest extends AbstractApiTest {
   }
 
   @Test
+  void configurePlayDrainRefusedRefillPlayInOneFlow() throws Exception { // AC-18, AC-19
+    String id = createMachine(ONE_SLOT_JACKPOT);
+    spins.enqueue(new int[] {0}, new int[] {0});
+
+    postJson(BASE + "/" + id + PLAY, PAID)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.prize").value("JACKPOT"))
+        .andExpect(jsonPath("$.floatAfter").value(0))
+        .andExpect(jsonPath("$.status").value("NEEDS_REFILL"));
+
+    postJson(BASE + "/" + id + PLAY, PAID)
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.type").value("machine-needs-refill"));
+    assertEquals(1, spins.calls(), "a refused play must not spin");
+
+    postJson(BASE + "/" + id + "/refills", "{\"amountPence\":5000}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.floatPence").value(5000))
+        .andExpect(jsonPath("$.status").value("ACTIVE"));
+    assertEquals(1, count("refill"));
+
+    // One-slot machine: every spin is a jackpot, so the play pays the 5,000p float plus the 100p
+    // stake.
+    postJson(BASE + "/" + id + PLAY, PAID)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.paidOut").value(5100));
+    assertEquals(2, count("play"));
+  }
+
+  @Test
   void freePlayCreditIsEarnedAndSpentOnNoneMachine() throws Exception { // AC-22, AC-25
     String id = createMachine(NONE_EMPTY);
     spins.enqueue(SMALL_PRIZE, SMALL_PRIZE);
