@@ -214,6 +214,72 @@ class MachineServiceTest {
     assertEquals(new MachineTotals(0, 0, 0), service.read(id).totals());
   }
 
+  @Test
+  void refillAddsToTheFloatAndIsRecorded() {
+    // AC-19: float 0 after a jackpot; refill 5,000p gives float 5,000p, one refill row, ACTIVE.
+    UUID id = service.configure(CONFIG);
+    spin(JACKPOT);
+    service.play(id, false);
+
+    service.refill(id, 5_000);
+
+    MachineState state = service.read(id);
+    assertEquals(5_000, state.machine().floatPence());
+    assertEquals(MachineStatus.ACTIVE, state.machine().status());
+    assertEquals(1, countRefills());
+    assertEquals(5_000, state.totals().totalRefilledPence());
+  }
+
+  @Test
+  void refillToExactlyTheReserveAllowsPlayingAgain() {
+    // BR-08: refused at float 0, refilled to 500p (the reserve), accepted again.
+    UUID id = service.configure(CONFIG);
+    spin(JACKPOT);
+    service.play(id, false);
+    spin(NO_WIN);
+    assertThrows(MachineNeedsRefillException.class, () -> service.play(id, false));
+
+    service.refill(id, 500);
+
+    assertEquals(MachineStatus.ACTIVE, service.read(id).machine().status());
+    assertEquals(PrizeType.NONE, service.play(id, false).prize());
+  }
+
+  @Test
+  void refillBelowTheReserveIsAcceptedButStillNeedsRefill() {
+    // UC-08 A1: the refill is kept; status stays NEEDS_REFILL and play is still refused.
+    UUID id = service.configure(CONFIG);
+    spin(JACKPOT);
+    service.play(id, false);
+
+    service.refill(id, 100);
+
+    assertEquals(100, floatOf(id));
+    assertEquals(MachineStatus.NEEDS_REFILL, service.read(id).machine().status());
+    spin(NO_WIN);
+    assertThrows(MachineNeedsRefillException.class, () -> service.play(id, false));
+  }
+
+  @Test
+  void refillOfZeroOrLessIsRejectedAndRecordsNothing() {
+    // UC-08 step 2
+    UUID id = service.configure(CONFIG);
+
+    assertThrows(IllegalArgumentException.class, () -> service.refill(id, 0));
+    assertThrows(IllegalArgumentException.class, () -> service.refill(id, -5));
+
+    assertEquals(1_000, floatOf(id));
+    assertEquals(0, countRefills());
+  }
+
+  @Test
+  void refillOfAnUnknownMachineIsNotFound() {
+    // AC-29
+    assertThrows(MachineNotFoundException.class, () -> service.refill(UUID.randomUUID(), 500));
+
+    assertEquals(0, countRefills());
+  }
+
   private void spin(int[] forced) {
     when(spinGenerator.generate(anyInt(), anyInt())).thenReturn(forced);
   }
@@ -224,6 +290,10 @@ class MachineServiceTest {
 
   private long countPlays() {
     return jdbc.queryForObject("SELECT COUNT(*) FROM play", Long.class);
+  }
+
+  private long countRefills() {
+    return jdbc.queryForObject("SELECT COUNT(*) FROM refill", Long.class);
   }
 
   private long countPlays(String prize) {

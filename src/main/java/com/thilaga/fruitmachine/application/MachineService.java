@@ -45,6 +45,18 @@ public class MachineService {
     return result;
   }
 
+  /**
+   * UC-08: an operator refill, with its own history row (D11). Refill may stay below the reserve.
+   */
+  @Transactional
+  public void refill(UUID id, long amountPence) {
+    Machine machine =
+        repository.findForUpdate(id).orElseThrow(() -> new MachineNotFoundException(id));
+    machine.refill(amountPence);
+    repository.save(id, machine);
+    repository.recordRefill(id, amountPence, machine.floatPence());
+  }
+
   /** UC-06: reads a machine without locking it. */
   @Transactional(readOnly = true)
   public MachineState read(UUID id) {
