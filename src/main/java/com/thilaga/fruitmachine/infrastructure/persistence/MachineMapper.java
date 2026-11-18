@@ -4,13 +4,14 @@ import com.thilaga.fruitmachine.domain.Machine;
 import com.thilaga.fruitmachine.domain.MachineConfig;
 import com.thilaga.fruitmachine.domain.MachineState;
 import com.thilaga.fruitmachine.domain.MachineTotals;
+import com.thilaga.fruitmachine.domain.PlayResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Converts between domain objects and entities. Colour ids become names here (MachineConfig
- * Javadoc).
+ * Converts between domain objects and entities. Colour ids become names here, at the persistence
+ * boundary (see the MachineConfig Javadoc).
  */
 final class MachineMapper {
 
@@ -26,8 +27,7 @@ final class MachineMapper {
     entity.playCostPence = config.playCostPence();
     entity.startingFloatPence = config.startingFloatPence();
     entity.floatPolicy = config.floatPolicyType();
-    entity.floatPence = machine.floatPence();
-    entity.freePlays = Math.toIntExact(machine.freePlayBalance());
+    applyState(entity, machine);
     entity.totalPlays = totals.totalPlays();
     entity.totalPaidPence = totals.totalPaidPence();
     entity.totalRefilledPence = totals.totalRefilledPence();
@@ -47,6 +47,37 @@ final class MachineMapper {
     MachineTotals totals =
         new MachineTotals(entity.totalPlays, entity.totalPaidPence, entity.totalRefilledPence);
     return new MachineState(entity.id, machine, totals);
+  }
+
+  /** Copies the mutable state (float and free plays) back onto the entity. */
+  static void applyState(MachineEntity entity, Machine machine) {
+    entity.floatPence = machine.floatPence();
+    entity.freePlays = Math.toIntExact(machine.freePlayBalance());
+  }
+
+  static PlayEntity toPlayEntity(
+      UUID playId, UUID machineId, List<String> colours, PlayResult result, boolean usedFreePlay) {
+    PlayEntity entity = new PlayEntity();
+    entity.id = playId;
+    entity.machineId = machineId;
+    entity.slots = slotNames(result.spin(), colours);
+    entity.prize = result.prize();
+    entity.usedFreePlay = usedFreePlay;
+    entity.nominalPence = result.nominalPence();
+    entity.paidPence = result.paidPence();
+    entity.freePlaysCredited = Math.toIntExact(result.freePlaysEarned());
+    entity.floatAfterPence = result.floatAfterPence();
+    return entity;
+  }
+
+  static RefillEntity toRefillEntity(
+      UUID refillId, UUID machineId, long amountPence, long floatAfterPence) {
+    RefillEntity entity = new RefillEntity();
+    entity.id = refillId;
+    entity.machineId = machineId;
+    entity.amountPence = amountPence;
+    entity.floatAfterPence = floatAfterPence;
+    return entity;
   }
 
   /** Spin colour ids to colour names, for the play history (JSON column). */
