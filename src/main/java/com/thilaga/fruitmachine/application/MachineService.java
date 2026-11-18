@@ -38,7 +38,7 @@ public class MachineService {
   @Transactional
   public PlayResult play(UUID id, boolean useFreePlay) {
     Machine machine = findForUpdateOrThrow(id);
-    PlayResult result = machine.play(useFreePlay, spinGenerator);
+    PlayResult result = machine.play(UUID.randomUUID(), useFreePlay, spinGenerator);
     repository.save(id, machine);
     repository.recordPlay(id, result, useFreePlay);
     return result;

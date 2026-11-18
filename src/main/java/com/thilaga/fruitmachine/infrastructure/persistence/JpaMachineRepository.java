@@ -113,7 +113,7 @@ class JpaMachineRepository implements MachineRepository {
     entity.totalPlays++;
     entity.totalPaidPence += result.paidPence();
     entityManager.persist(
-        MachineMapper.toPlayEntity(UUID.randomUUID(), id, entity.colours, result, usedFreePlay));
+        MachineMapper.toPlayEntity(result.playId(), id, entity.colours, result, usedFreePlay));
   }
 
   @Override
