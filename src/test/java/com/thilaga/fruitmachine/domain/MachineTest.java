@@ -71,6 +71,17 @@ class MachineTest {
   }
 
   @Test
+  void refillRejectsNonPositiveAmount_noStateChange() {
+    // UC-08 step 2
+    Machine machine = new Machine(minReserveConfig(100, 1_000));
+
+    assertThrows(IllegalArgumentException.class, () -> machine.refill(0));
+    assertThrows(IllegalArgumentException.class, () -> machine.refill(-1));
+
+    assertEquals(1_000, machine.floatPence());
+  }
+
+  @Test
   void statusFollowsFloat_afterJackpotThenRefill() {
     // AC-18: a machine that has just paid a jackpot, float 0p.
     Machine machine = new Machine(minReserveConfig(100, 1_000), 0, 0);

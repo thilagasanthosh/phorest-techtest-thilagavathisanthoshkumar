@@ -7,6 +7,7 @@ import java.util.Objects;
 public record PlayResult(
     int[] spin,
     PrizeType prize,
+    long nominalPence,
     long paidPence,
     long freePlaysEarned,
     long freePlayBalanceAfter,
@@ -23,6 +24,7 @@ public record PlayResult(
     }
     return Arrays.equals(spin, other.spin)
         && prize == other.prize
+        && nominalPence == other.nominalPence
         && paidPence == other.paidPence
         && freePlaysEarned == other.freePlaysEarned
         && freePlayBalanceAfter == other.freePlayBalanceAfter
@@ -35,6 +37,7 @@ public record PlayResult(
     return Objects.hash(
         Arrays.hashCode(spin),
         prize,
+        nominalPence,
         paidPence,
         freePlaysEarned,
         freePlayBalanceAfter,
@@ -48,6 +51,8 @@ public record PlayResult(
         + Arrays.toString(spin)
         + ", prize="
         + prize
+        + ", nominalPence="
+        + nominalPence
         + ", paidPence="
         + paidPence
         + ", freePlaysEarned="

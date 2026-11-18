@@ -48,6 +48,7 @@ public final class Machine {
     return new PlayResult(
         spin,
         prize,
+        settlement.nominalPence(),
         settlement.paidPence(),
         settlement.freePlaysEarned(),
         freePlayBalance,
@@ -56,6 +57,9 @@ public final class Machine {
   }
 
   public void refill(long amountPence) {
+    if (amountPence <= 0) {
+      throw new IllegalArgumentException("refill amount must be greater than 0");
+    }
     floatPence += amountPence;
   }
 

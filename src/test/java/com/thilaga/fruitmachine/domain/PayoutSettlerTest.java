@@ -78,6 +78,15 @@ class PayoutSettlerTest {
   }
 
   @Test
+  void nominalIsTheAmountDueBeforeTheFloatCap() {
+    // BR-10: float after stake 1,100p; nominal is what should have been paid per prize.
+    assertEquals(1_100, PayoutSettler.settle(1_000, 100, 100, PrizeType.JACKPOT).nominalPence());
+    assertEquals(550, PayoutSettler.settle(1_000, 100, 100, PrizeType.FULL_HOUSE).nominalPence());
+    assertEquals(500, PayoutSettler.settle(1_000, 100, 100, PrizeType.SMALL_PRIZE).nominalPence());
+    assertEquals(0, PayoutSettler.settle(1_000, 100, 100, PrizeType.NONE).nominalPence());
+  }
+
+  @Test
   void jackpotNeverCreatesFreePlaysEvenFromAFreePlay() {
     // AC-24: NONE machine, float 0p, a free play (stake 0) wins the jackpot.
     Settlement s = PayoutSettler.settle(0, 0, 100, PrizeType.JACKPOT);
