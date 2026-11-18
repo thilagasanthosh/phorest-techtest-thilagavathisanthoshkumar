@@ -205,3 +205,14 @@ Integration tests: `@SpringBootTest` + `@Import(TestcontainersConfiguration.clas
 - **Risks:** section 8. Main ones are the lock-timeout hint and the `PlayResult` change ripple.
 - **Open questions:** section 9, items 1-4 (defaults apply). Item 5 is confirmed.
 - **Ready for Task 0:** yes, pending a go-ahead to implement.
+
+## 11. Implementation deviations (as built)
+
+- **Starting float column:** `machine.starting_float_pence` added to V1. ERD-01 has no column, but AC-28 (read returns config) and the AC-33 invariant (`float + total paid = starting float + 200 x play cost`) need it.
+- **Insert signature:** `MachineRepository.insert(UUID id, Machine machine)` returns void. The id comes from `MachineService.configure` (D-c), so the port does not generate it.
+- **Lock timeout:** Hibernate drops `jakarta.persistence.lock.timeout` on MySQL, and MySQL 8.4 ignores `SET_VAR(innodb_lock_wait_timeout)` (probed). `findForUpdate` runs `SET SESSION innodb_lock_wait_timeout = 2`, the locking `SELECT ... FOR UPDATE`, then `SET SESSION ... = DEFAULT`. Two extra statements per play and refill.
+- **Busy mapping:** `findForUpdate` catches `PersistenceException` and maps MySQL 1205 (lock wait timeout) and 1213 (deadlock) to `MachineBusyException`. Catching only Spring's `PessimisticLockingFailureException` missed the deadlock, because the translation happens after the method returns.
+- **Extra domain types:** `MachineTotals` and `MachineState` (Task 3), `Machine.reservePence()` and `FloatPolicy.reservePence()` (Task 4).
+- **Test visibility:** `TestcontainersConfiguration` made `public` so tests in other packages can import it.
+- **Test packages:** persistence tests live in `infrastructure.persistence`, and `RandomSpinGeneratorTest` in `infrastructure`.
+- **Restart test:** a second `ApplicationContext` on the same container, as Task 7 describes. It is not a process restart.
