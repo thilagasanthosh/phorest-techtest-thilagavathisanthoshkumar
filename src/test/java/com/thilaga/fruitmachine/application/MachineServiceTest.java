@@ -1,5 +1,6 @@
 package com.thilaga.fruitmachine.application;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,8 +26,14 @@ import com.thilaga.fruitmachine.domain.NoFreePlayAvailableException;
 import com.thilaga.fruitmachine.domain.PlayResult;
 import com.thilaga.fruitmachine.domain.PrizeType;
 import com.thilaga.fruitmachine.domain.SpinGenerator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -277,6 +284,63 @@ class MachineServiceTest {
     assertThrows(MachineNotFoundException.class, () -> service.refill(UUID.randomUUID(), 500));
 
     assertEquals(0, countRefills());
+  }
+
+  @Test
+  void twoSimultaneousPlaysSeeEachOthersFloat() throws Exception {
+    // AC-32: plays on one machine are serialised by the row lock; the second sees the first's
+    // stake.
+    UUID id =
+        service.configure(MachineConfig.of(4, COLOURS, 2, 100, 500, FloatPolicyType.MIN_RESERVE));
+    spin(NO_WIN);
+
+    long[] floats =
+        playConcurrently(id, 2).stream().mapToLong(PlayResult::floatAfterPence).sorted().toArray();
+
+    assertArrayEquals(new long[] {600, 700}, floats);
+    assertEquals(700, floatOf(id));
+    assertEquals(2, countPlays());
+  }
+
+  @Test
+  void twoHundredParallelPlaysKeepMoneyConsistent() throws Exception {
+    // AC-33, NFR-04: the float is large enough that no play is refused.
+    UUID id =
+        service.configure(
+            MachineConfig.of(4, COLOURS, 2, 100, 100_000, FloatPolicyType.MIN_RESERVE));
+    spin(NO_WIN);
+
+    playConcurrently(id, 200);
+
+    MachineState state = service.read(id);
+    assertEquals(
+        100_000 + 200 * 100, state.machine().floatPence() + state.totals().totalPaidPence());
+    assertEquals(200, countPlays());
+  }
+
+  /** Starts all plays behind one latch so they overlap; fails if any play is refused. */
+  private List<PlayResult> playConcurrently(UUID id, int plays) throws Exception {
+    ExecutorService pool = Executors.newFixedThreadPool(Math.min(plays, 20));
+    CountDownLatch start = new CountDownLatch(1);
+    try {
+      List<Future<PlayResult>> futures = new ArrayList<>();
+      for (int i = 0; i < plays; i++) {
+        futures.add(
+            pool.submit(
+                () -> {
+                  start.await();
+                  return service.play(id, false);
+                }));
+      }
+      start.countDown();
+      List<PlayResult> results = new ArrayList<>();
+      for (Future<PlayResult> future : futures) {
+        results.add(future.get(60, TimeUnit.SECONDS));
+      }
+      return results;
+    } finally {
+      pool.shutdownNow();
+    }
   }
 
   private void spin(int[] forced) {

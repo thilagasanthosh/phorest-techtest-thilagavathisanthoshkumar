@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.thilaga.fruitmachine.TestTables;
 import com.thilaga.fruitmachine.TestcontainersConfiguration;
@@ -85,6 +86,57 @@ class SchemaConstraintsTest {
     assertRejected(ER_NO_REFERENCED_ROW, () -> insertRefill(UUID.randomUUID(), 500, 500));
   }
 
+  @Test
+  void slotCountBelowOneIsRejected() {
+    // Also violates chk_machine_k, so only the error code is checked.
+    assertRejected(ER_CHECK_CONSTRAINT_VIOLATED, () -> insertMachineWith(0, 100, 1_000, 0));
+  }
+
+  @Test
+  void playCostOfZeroIsRejected() {
+    assertRejectedBy("chk_machine_play_cost", () -> insertMachineWith(4, 0, 1_000, 0));
+  }
+
+  @Test
+  void negativeFreePlaysIsRejected() {
+    assertRejectedBy("chk_machine_free_plays", () -> insertMachineWith(4, 100, 1_000, -1));
+  }
+
+  @Test
+  void negativePaidOnPlayIsRejected() {
+    UUID machine = insertMachineWith(4, 100, 1_000, 0);
+
+    assertRejectedBy("chk_play_paid", () -> insertPlayWith(machine, -1, 1_000));
+  }
+
+  @Test
+  void negativeFloatAfterOnPlayIsRejected() {
+    UUID machine = insertMachineWith(4, 100, 1_000, 0);
+
+    assertRejectedBy("chk_play_float_after", () -> insertPlayWith(machine, 0, -1));
+  }
+
+  @Test
+  void zeroRefillAmountIsRejected() {
+    UUID machine = insertMachineWith(4, 100, 1_000, 0);
+
+    assertRejectedBy("chk_refill_amount", () -> insertRefill(machine, 0, 500));
+  }
+
+  @Test
+  void negativeFloatAfterOnRefillIsRejected() {
+    UUID machine = insertMachineWith(4, 100, 1_000, 0);
+
+    assertRejectedBy("chk_refill_float_after", () -> insertRefill(machine, 500, -1));
+  }
+
+  private static void assertRejectedBy(String constraint, Executable insert) {
+    DataAccessException e = assertThrows(DataAccessException.class, insert);
+    Throwable cause = e.getMostSpecificCause();
+    assertEquals(ER_CHECK_CONSTRAINT_VIOLATED, ((SQLException) cause).getErrorCode());
+    assertTrue(cause.getMessage().contains(constraint), cause.getMessage());
+  }
+
   private static void assertRejected(int mysqlErrorCode, Executable insert) {
     DataAccessException e = assertThrows(DataAccessException.class, insert);
     Throwable cause = e.getMostSpecificCause();
@@ -107,6 +159,36 @@ class SchemaConstraintsTest {
         floatPolicy,
         floatPence);
     return id;
+  }
+
+  /** Valid k = 1 machine with the given slot count, play cost, float and free-play balance. */
+  private UUID insertMachineWith(int slots, long playCost, long floatPence, long freePlays) {
+    UUID id = UUID.randomUUID();
+    jdbc.update(
+        "INSERT INTO machine (id, slot_count, colours, k, play_cost_pence,"
+            + " starting_float_pence, float_policy, float_pence, free_plays, total_plays,"
+            + " total_paid_pence, total_refilled_pence, version)"
+            + " VALUES (?, ?, ?, 1, ?, ?, 'MIN_RESERVE', ?, ?, 0, 0, 0, 0)",
+        bytes(id),
+        slots,
+        COLOURS,
+        playCost,
+        floatPence,
+        floatPence,
+        freePlays);
+    return id;
+  }
+
+  private void insertPlayWith(UUID machineId, long paidPence, long floatAfterPence) {
+    jdbc.update(
+        "INSERT INTO play (id, machine_id, slots, prize, used_free_play, nominal_pence,"
+            + " paid_pence, free_plays_credited, float_after_pence) VALUES (?, ?, ?, 'NONE', false,"
+            + " 0, ?, 0, ?)",
+        bytes(UUID.randomUUID()),
+        bytes(machineId),
+        SLOTS,
+        paidPence,
+        floatAfterPence);
   }
 
   private void insertPlay(UUID machineId, String prize) {
