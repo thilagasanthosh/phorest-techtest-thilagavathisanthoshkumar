@@ -1,4 +1,4 @@
-package com.thilaga.fruitmachine.persistence;
+package com.thilaga.fruitmachine.infrastructure.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
