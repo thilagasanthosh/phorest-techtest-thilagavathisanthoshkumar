@@ -23,13 +23,31 @@ No `docs/specs/` feature spec exists for any issue so far. Following the earlier
 
 ## 3. Gaps against the issue and requirements
 
-1. **Scripted spins only exist as a domain class.** `FixedSpinGenerator` is in `src/main`. The issue requires the scripted generator in a **test-only** configuration that can never be active in production. Plan: the test config lives under `src/test`, is imported only by system tests, and a test asserts production wiring picks `RandomSpinGenerator`. (Task 1)
+1. **Scripted spins already exist.** `ScriptedSpins` and `ScriptedSpinsConfig` (`@TestConfiguration`, `@Primary`) are in `src/test/.../api`. Reuse them; add only a guard test that production wiring uses `RandomSpinGenerator`. (Task 1)
 2. **Traceability matrix does not exist.** The issue asks to "update the master traceability matrix". No file in `docs/` or `README.md` holds one (grep for "traceability" finds only the issue body). Plan: create it as a section of `docs/verification.md` (requirement, test, result), not a new document. Confirm this placement before Task 9.
 3. **AC-34 (fair spins) and AC-35 (1,000,000 slots < 100 ms) are not system-level.** NFR-15 and NFR-01 need statistical and timing checks. Plan: check whether Issue 2 tests already cover them. If yes, cite them in `verification.md` and do not duplicate. If not, add the domain-level check. (Task 7)
 3a. **AC-33 needs a rule for busy results.** With a 2 s lock timeout and 200 parallel plays on one machine, some plays return 503 `machine-busy`. Acceptance wording "money stays consistent" is measured as: successes + busy = 200, and `float_end = float_start + stakes − paid_out` holds exactly, with no negative float and no stake recorded for a busy play. This is the assertion; say so in `verification.md`.
 4. **Postman collection: contents not checked.** `postman/` exists. Plan starts by listing its contents; if it has a collection already, extend it and do not create a second one.
 5. **Newman is not in the repo.** Run it with `npx newman` (Node required) or document the install. The issue says "runnable with Newman"; the exact command goes in the README section for verification. Decide Node version when writing the README line.
 6. **Scenario mapping to AC is not in the source.** The issue gives a matrix by SC, not by AC. Plan: each system test name carries its SC and AC ids (e.g. `sc04_jackpot_forced_spin_ac07`), so `verification.md` can be filled from test names.
+
+## 3b. Test tiers and IT tests
+
+Repo convention: existing tests use Surefire's `*Test` naming. `pom.xml` has no Failsafe config (checked). Decision: system tests added in this issue are `*IT` classes run by Failsafe, so the API system verification is separate from unit and MockMvc tests. Existing `*Test` classes are not renamed.
+
+| Tier | Spring context | Database | HTTP | Package | Existing examples |
+|---|---|---|---|---|---|
+| Unit | none (plain Java) | none | none | `domain` | `MachineTest`, `PrizeEvaluatorTest`, `MachineConfigTest` |
+| IT (integration) | Spring Boot, Testcontainers MySQL | real MySQL | MockMvc (in-process) | `infrastructure`, `application`, `api` | `JpaMachineRepositoryTest`, `SchemaConstraintsTest`, `MachineHistoryTest`, `MachineServiceTest`, `MachineCreateApiTest`, `MachineInteractionApiTest`, `MachineRefillApiTest`, `MachineReadApiTest`, `OpenApiApiTest` |
+| System (Issue 7) | Spring Boot on `RANDOM_PORT`, Testcontainers MySQL | real MySQL | real HTTP | `system` (new), `*IT` via Failsafe | none yet |
+| Acceptance (Issue 7) | full stack via `docker compose up` | real MySQL | real HTTP | Postman collection in `postman/`, run with Newman | none yet |
+
+Rules for this issue:
+- IT tests already cover persistence, schema constraints, service behaviour and API shape. Issue 7 does not repeat them.
+- Task 0 audits IT coverage against AC-01..36. New IT tests are added only for ACs with no IT. They use MockMvc and MySQL, not the random-port system base.
+- System `*IT` tests are added for scenario outcomes that need the real HTTP server (SC-01..13). They verify API behaviour against the spec. They do not replace acceptance.
+- Acceptance is the Postman/Newman run against `docker compose up` (Task 8), recorded in `verification.md`. This repo has no UI, so no Cucumber or Playwright layer.
+- All tiers use real MySQL. No H2 (CLAUDE.md).
 
 ## 4. Decisions and scope status
 
@@ -45,6 +63,7 @@ No `docs/specs/` feature spec exists for any issue so far. Following the earlier
 | V-8 | Stress-test SC-13 with 200 parallel plays in the system test, not in UAT | In scope | Issue 7 matrix |
 | V-9 | k6 or Postman Runner for SC-13 UAT | **OUT OF SCOPE**: the matrix says "Optional" | Issue 7 matrix |
 | V-10 | New business features or API endpoints | **OUT OF SCOPE**: verification only | Issue 7 goal |
+| V-12 | System tests are `*IT` run by Failsafe; acceptance is Postman/Newman. No Cucumber or Playwright (no UI; not required by this repo's CLAUDE.md) | In scope | User decision, Issue 7 planning |
 | V-11 | Fixing product defects found here | **OUT OF SCOPE** unless a blocking defect is found, then a separate fix on this branch with its own test. Record the defect first. | Issue 7 exit criteria |
 
 ## 5. Test and acceptance mapping
@@ -74,14 +93,20 @@ AC-14 (one-slot machine) and AC-34/AC-35 are covered by Task 7 and Task 1 below.
 
 For each task: failing test → minimal code (or config) → `./mvnw fmt:format` → commit with path-limited `git add` (per project commit notes).
 
-**Task 1, test-only scripted spins (V-2)**
+**Task 0, IT coverage audit (section 3b)**
+- List each AC-01..36 with the IT test that covers it, or "none".
+- Test first, only for ACs marked "none": MockMvc + MySQL IT test, then minimal code if it fails.
+- Verify: `./mvnw test` (all IT tests green, existing names unchanged).
+
+**Task 1, scripted spins guard (V-2)**
 - Test first: `ProductionWiringTest` asserts the default context has exactly one `SpinGenerator` bean and it is `RandomSpinGenerator` (AC-34 guard).
-- Code: `src/test/.../ScriptedSpinConfig` (`@TestConfiguration`, `@Primary` `SpinGenerator` backed by `FixedSpinGenerator`, takes a queue of spins). Not in `src/main`.
+- Code: none new. Reuse `ScriptedSpins` and `ScriptedSpinsConfig` (`src/test/.../api`). Confirm nothing in `src/main` references them.
 - Verify: `./mvnw test -Dtest=ProductionWiringTest`.
 
 **Task 2, system test base (V-1, V-3)**
 - Test first: `SystemTestSmokeTest` creates a machine over HTTP on the random port and reads it back.
-- Code: abstract base class in `src/test` with `RANDOM_PORT`, shared MySQL container, the HTTP client, and a helper to queue spins.
+- Add `maven-failsafe-plugin` to `pom.xml` (version managed by the Spring Boot parent; confirm it is present) with `integration-test` and `verify` goals, including `**/*IT.java`.
+- Code: `SystemTestBase` in `src/test/.../system`: `@SpringBootTest(webEnvironment = RANDOM_PORT)`, `@Import({TestcontainersConfiguration.class, ScriptedSpinsConfig.class})`, an HTTP client bean (`RestTestClient` or `TestRestTemplate`), and state reset. Do not extend `AbstractApiTest` (MockMvc, no real HTTP).
 - Verify: `./mvnw test -Dtest=SystemTestSmokeTest`.
 
 **Task 3, SC-01 and SC-02 configure (AC-01, AC-02, AC-05, AC-18)**
@@ -130,6 +155,8 @@ For each task: failing test → minimal code (or config) → `./mvnw fmt:format`
 - [ ] Traceability section present.
 - [ ] RN-01..11 re-read and open items listed.
 - [ ] Scripted spin config is test-only (Task 1 guard passes).
+- [ ] All existing tests pass unchanged; Task 0 tests use `*Test` naming and real MySQL.
+- [ ] `./mvnw verify` runs the system `*IT` classes; `target/failsafe-reports/` lists them (check before relying on it).
 - [ ] No open blocking defect.
 - [ ] Postman collection, environment, and `verification.md` committed; PR body `Closes #7`.
 
@@ -141,7 +168,8 @@ For each task: failing test → minimal code (or config) → `./mvnw fmt:format`
 4. **Random spins in UAT:** a rule-checking UAT cannot prove exact prize outcomes; exact proof comes from the system tests.
 5. **Missing spec stage:** CLAUDE.md requires `docs/specs/US-07-...md` before this plan. None exists for any issue, so this plan follows earlier plans. Say if you want the spec written first.
 6. **Newman and Node version:** needed for Task 8; not yet in the repo.
-7. **Unchecked:** `postman/` contents, whether Issue 2 tests cover AC-34/35, and CI status on `main` were not verified in this planning step.
+7. **Failsafe version:** confirm the Spring Boot parent manages `maven-failsafe-plugin`; otherwise pin a version (check it is at least two weeks old).
+8. **Unchecked:** `postman/` contents, whether Issue 2 tests cover AC-34/35, and CI status on `main` were not verified in this planning step.
 
 ## 10. Estimated size
 
