@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build:
@@ -37,7 +38,12 @@ jobs:
                 /^skipped=/ {sub(/skipped="/,""); sub(/"$/,""); s=$0}
                 END {printf "| %s | %s | %s | %s | %s |\n", n, t, fa, e, s}'
             done
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee test-summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Post test results to PR
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file test-summary.md --edit-last --create-if-none
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
