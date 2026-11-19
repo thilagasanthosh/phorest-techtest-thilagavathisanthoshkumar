@@ -12,6 +12,41 @@ Brief parts covered: core spin and jackpot (Part 1), payouts and free-play short
 - Docker, running (tests and the dev launcher use MySQL through Testcontainers)
 - Optional: Newman for the command-line Postman run (`npm i -g newman`)
 
+### Java 21 setup (do this first)
+
+The build needs JDK 21 exactly. The Maven enforcer stops the build on any other version, and the formatter crashes on JDK 27. Check before anything else:
+
+```
+java -version        # must show "21.x"
+./mvnw -v            # "Java version: 21.x" on the last lines
+```
+
+If either shows another version, set `JAVA_HOME` to a JDK 21 install for this shell:
+
+- **macOS:** `export JAVA_HOME=$(/usr/libexec/java_home -v 21)`
+- **Linux:** `export JAVA_HOME=/usr/lib/jvm/<jdk-21-folder>`
+- **Windows (PowerShell):** `$env:JAVA_HOME="C:\Program Files\Java\jdk-21"`
+
+Make it permanent by adding the export line to `~/.zshrc` or `~/.bashrc` (macOS/Linux), or by setting `JAVA_HOME` under System environment variables (Windows). Restart the terminal afterwards.
+
+**IntelliJ IDEA settings** (File → Settings on Windows/Linux, IntelliJ IDEA → Settings on macOS):
+
+1. **Build, Execution, Deployment → Build Tools → Maven → Runner → JRE:** select a JDK 21 entry (not "Project JDK" if that is 27).
+2. **Build, Execution, Deployment → Build Tools → Maven → Importing → JDK for importer:** select JDK 21.
+3. **File → Project Structure → Project → SDK:** select JDK 21. **Language level:** 21.
+4. **File → Project Structure → Modules → Language level:** 21.
+5. Run configurations (the dev launcher, tests): **Edit Configuration → JRE:** JDK 21, or leave as "Project SDK" once step 3 is set.
+6. If IntelliJ was open before changing these, reload the Maven project (Maven panel → reload icon).
+
+Confirm with `./mvnw -B verify` from the IDE terminal: the output must show `BUILD SUCCESS`.
+
+**Before you start the project, please confirm all of these:**
+
+- [ ] `java -version` shows 21.x in the terminal you will build from
+- [ ] `./mvnw -v` shows JDK 21
+- [ ] IntelliJ Project SDK and Maven runner JDK are both 21
+- [ ] `./mvnw verify` ends with `BUILD SUCCESS`
+
 ### One-time setup
 
 ```
