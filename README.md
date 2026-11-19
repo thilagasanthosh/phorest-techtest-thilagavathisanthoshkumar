@@ -19,6 +19,17 @@ git config core.hooksPath .githooks   # pre-commit formatter hook
 
 ## 3. Run the API
 
+### Option 0: Docker Compose (MySQL and app, one command)
+
+```
+cp .env.example .env        # then replace both passwords in .env
+docker compose up -d --build
+curl http://localhost:8080/actuator/health
+docker compose down -v      # stop and delete the data
+```
+
+Compose starts MySQL 8.0 and the app. The app connects as `fruitmachine_app`, which has rights on the `fruitmachine` schema only. Flyway still needs DDL rights on that schema to migrate at startup, so a separate migration user would be the next step if that matters. `.env` is gitignored; never commit it.
+
 ### Option A: dev launcher with its own MySQL (no setup)
 
 Run `src/test/java/com/thilaga/fruitmachine/TestFruitmachineApplication.java` from your IDE (its `main` method). Docker must be running. The launcher starts a throwaway MySQL container. Data is lost when it stops.
@@ -55,6 +66,14 @@ Use "Try it out" in Swagger UI to call endpoints directly.
 | GET | `/api/v1/machines/{id}` | Read machine state |
 | POST | `/api/v1/machines/{id}/plays` | Play (`{"useFreePlay": false}`) |
 | POST | `/api/v1/machines/{id}/refills` | Operator refill (`{"amountPence": 500}`) |
+
+### Why MIN_RESERVE and refill exist (D10, D11)
+
+Under the default policy MIN_RESERVE a machine refuses plays while its float is below five times the play cost (409 `machine-needs-refill`). This means every prize can always be paid in full from the float. The machine returns to service only when an operator refills it (`POST .../refills`); each refill is recorded in the machine's history.
+
+### Policy NONE keeps the original rules
+
+Policy NONE accepts every play and applies the shortfall rule literally: when the float cannot pay a prize in full, the unpaid amount becomes free plays (shortfall divided by the play cost, rounded up). Choose it at configuration with `"floatPolicy": "NONE"`.
 
 Errors use RFC 7807 problem details (`application/problem+json`). Types: `validation-error` (400), `machine-not-found` (404), `machine-needs-refill` (409), `no-free-plays` (409), `machine-busy` (503 with `Retry-After`).
 
