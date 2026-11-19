@@ -151,6 +151,34 @@ Next steps with more time, in order: fix the 404/405/415 mapping; decide the fre
 - Disagreed with or reworked: the first CI summary step did not produce a table (fixed by posting a PR comment); the plans sometimes included items the requirements did not support, so they were marked out of scope (see `docs/plans/US-04-rest-api-plan.md` section 4); I checked the free-play numbers against the rules by hand rather than trusting the output.
 - Verification: domain tests run locally; full suite and CI checked on the PR.
 
+### AI usage prompts
+
+Prompts used with Claude Code, in workflow order. Each issue followed the same stages: GitHub issue → feature spec → implementation plan → implementation → tests → review → PR.
+
+**1. Understand requirements**
+
+> Read the brief and the business requirements, use cases and conceptual design. List the business rules (BR-xx), use cases (UC-xx) and decisions (D1–D11) with their source. Flag any conflict or ambiguity between the documents. Do not invent requirements.
+
+**2. Derive design documents**
+
+> Act as a Senior Java Solution Architect. Create a feature specification for Issue #N. Read `docs/gitHub_issue_bodies.md` (Issue #N), the three design documents and `docs/specs/`. Output `docs/specs/US-NN-<slug>.md` with: story information, requirement traceability (BR, UC, AC), functional specification, technical design boundaries, Given/When/Then acceptance scenarios, testing expectations, dependencies and out of scope, and Definition of Done. Constraints: one Spring Boot app, pure Java domain, no microservices, no separate frontend, one focused PR. Do not write implementation code yet.
+
+**3. Plan the work**
+
+> Act as a Senior Java Solution Architect and TDD Lead. Create an implementation plan for Issue #N from its spec and the existing `src/`. Output `docs/plans/US-NN-<slug>-plan.md` with prerequisites, branch name `feature/<n>-<slug>`, an ordered task list (AC covered, files, first failing test, minimal code, verify step), the TDD cycle, test strategy and Definition of Done. Constraints: money as integer pence, Testcontainers MySQL (no H2), decisions D1–D11 settled. Do not write source code yet. End with task count, risks and open questions.
+
+**4. Build (TDD, one task at a time)**
+
+> Implement task N of the plan. Write the failing test for its acceptance criterion first, then the minimal code, then run `./mvnw fmt:format`. Do not change code outside the task. Show the test result.
+
+**5. Review and verify**
+
+> Review the diff for correctness bugs, broken project rules and missing tests. Report only verified findings with file and line. Then check the acceptance criteria one by one against the running app and record the result in `docs/verification.md`.
+
+**6. Open the PR**
+
+> Commit only the paths for this issue. Open a PR from `feature/<n>-<slug>` to `main` with the body `Closes #<n>`.
+
 ## 8. Design documents
 
 - Brief: `docs/candidate-brief-fruit-machine-take-home-1-2-.pdf`
