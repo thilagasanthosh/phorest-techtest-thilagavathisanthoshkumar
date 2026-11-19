@@ -11,11 +11,11 @@ final class ScriptedSpins implements SpinGenerator {
   private final Deque<int[]> queue = new ArrayDeque<>();
   private int calls;
 
-  void enqueue(int[]... spins) {
+  synchronized void enqueue(int[]... spins) {
     queue.addAll(Arrays.asList(spins));
   }
 
-  void reset() {
+  synchronized void reset() {
     queue.clear();
     calls = 0;
   }
@@ -25,7 +25,7 @@ final class ScriptedSpins implements SpinGenerator {
   }
 
   @Override
-  public int[] generate(int slots, int colours) {
+  public synchronized int[] generate(int slots, int colours) {
     calls++;
     int[] next = queue.poll();
     if (next == null) {
