@@ -26,7 +26,7 @@ git config core.hooksPath .githooks   # pre-commit formatter hook
 ```
 docker compose --env-file .env.example up -d --build   # local only: uses the example passwords
 curl http://localhost:8080/actuator/health
-docker compose down -v      # stop and delete the data
+docker compose --env-file .env.example down -v   # stop and delete the data
 ```
 
 Compose starts MySQL 8.0 and the app. The app connects as `fruitmachine_app`, which has rights on the `fruitmachine` schema only. `.env` is gitignored; never commit it.
