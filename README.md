@@ -137,13 +137,26 @@ Design shape: `domain` is pure Java (game rules, `FloatPolicy`, `PrizeRule`s, `P
 Out of scope for this version, with reasons recorded in the plans:
 
 - **Separate migrator DB user** (least privilege for Flyway). Needs an extra service; no acceptance criterion.
-- **Idempotency-Key header** for plays. Design 5.1 says "later".
-- **Play history and list-machines endpoints** (API-05, API-06). Optional in design 5.2; no use case.
+- **Authentication and RBAC** (JWT resource server, `OPERATOR` and `PLAYER` roles, per-role tests). Deliberately deferred: the brief has no auth requirement, and it adds an issuer and token handling. Keycloak only if time allows.
+- **Idempotency-Key header** for plays. Design 5.1 says "later". Planned in the roadmap, so a retried request does not play twice.
+- **Play history and list-machines endpoints** (API-05, API-06). Optional in design 5.2; no use case. Pagination on history is the next step if added.
+- **Cloud deployment** (RDS MySQL, Secrets Manager or Parameter Store, Terraform or CDK, App Runner or ECS Fargate). Compose covers the one-command run (NFR-16); EKS is costly and not needed here.
+- **Resilience4j timeouts and circuit breaking** around the database call. The 2 s pessimistic lock timeout is the only bound today.
+- **Rate limiting** (Bucket4j or a gateway). The NFR-17 input limits cover payload size; there is no request-rate limit.
+- **OpenAPI depth**: summaries and descriptions on records, documented problem-details responses (400/404/409/503), and examples for play and refill. The OpenAPI paths exist; the detail does not yet.
 - **404/405/415 and malformed path ids mapped to their own statuses.** Currently they can fall into the catch-all 500. Open decision in `docs/plans/US-04-rest-api-plan.md` (section 9).
 - **Property-based tests** (jqwik) and **load tests beyond 200 plays**. No acceptance criterion; would add dependencies.
 - **Distributed tracing** (Micrometer Tracing / OpenTelemetry). The per-play log line covers NFR-14; ask before adding a dependency.
 
-Next steps with more time, in order: fix the 404/405/415 mapping; decide the free-play rule for MIN_RESERVE and the NONE loop; add a migrator DB user; cache the Maven distribution in CI.
+What I would do next, in order (full plan in `docs/roadmap.md`):
+
+1. Fix the 404/405/415 mapping so they stop falling into the 500 catch-all.
+2. Decide the free-play rule for MIN_RESERVE and the NONE loop (needs a spec decision).
+3. Core hardening: OpenAPI depth, Actuator metrics, Idempotency-Key on `POST /plays`.
+4. Authentication: JWT resource server, then RBAC with per-role tests; Keycloak only if time allows.
+5. Rate limiting and Resilience4j around the DB call.
+6. Deploy: secrets outside env vars, RDS MySQL 8 with a tested restore, IaC, and a small managed runtime.
+7. Add the migrator DB user and cache the Maven distribution in CI.
 
 ## 7. Where AI was used
 
