@@ -1,6 +1,6 @@
 # phorest-techtest-thilagavathisanthoshkumar
 
-Fruit Machine Service: a Spring Boot REST API for the take-home brief (`docs/candidate-brief-fruit-machine-take-home-1-2-.pdf`). It configures a machine (slots, colours, k, play cost, float, float policy), plays it, refills it, and reports its state. Machine state is stored in MySQL.
+Fruit Machine Service: a Spring Boot REST API for the take-home brief. It configures a machine (slots, colours, k, play cost, float, float policy), plays it, refills it, and reports its state. Machine state is stored in MySQL.
 
 Brief parts covered: core spin and jackpot (Part 1), payouts and free-play shortfall (Part 2), variable slots, colours and k (Part 3), REST service (Part 4). Optional extras done: Docker Compose, CI, persistence, Swagger, metrics.
 
@@ -194,7 +194,7 @@ Prompts used with Claude Code, in workflow order. Each issue followed the same s
 
 ## 8. Design documents
 
-- Brief: `docs/candidate-brief-fruit-machine-take-home-1-2-.pdf`
+- Brief: take-home brief
 - Business requirements: `docs/01-business-requirements.docx`
 - Use cases: `docs/02-use-cases.docx`
 - Conceptual design: `docs/03-conceptual-design.docx`
