@@ -12,19 +12,19 @@ Run on 2026-11-19 with JDK 21 (`./mvnw -B verify`, BUILD SUCCESS, 17 system ITs)
 
 | Scenario | Title | Result | Method | Date | Evidence |
 |---|---|---|---|---|---|
-| SC-01 | Original 4-slot configuration | Pass | System (`ConfigureSystemIT.sc01…`); UAT (1.2) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.ConfigureSystemIT.txt), [newman](evidence/uat-run.json) |
-| SC-02 | Variable configuration (10 slots, 300 colours, k = 3) | Pass | System (`ConfigureSystemIT.sc02…`); UAT not run | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.ConfigureSystemIT.txt) |
-| SC-03 | No prize | Pass | System (`PrizeSystemIT.sc03…`) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt) |
-| SC-04 | Jackpot | Pass | System (`PrizeSystemIT.sc04…`); UAT (3.5, one-slot) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt), [newman](evidence/uat-run.json) |
-| SC-05 | Full house, odd float | Pass | System (`PrizeSystemIT.sc05…`) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt) |
-| SC-06 | Small prize | Pass | System (`PrizeSystemIT.sc06…`) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt) |
-| SC-07 | Shortfall under policy NONE | Pass | System (`FreePlaySystemIT.sc07…`) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.FreePlaySystemIT.txt) |
-| SC-08 | Free plays credited, rounded up | Pass | System (`FreePlaySystemIT.sc08…`) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.FreePlaySystemIT.txt) |
-| SC-09 | Using a free-play credit; zero balance refused | Pass | System (`FreePlaySystemIT.sc09…`) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.FreePlaySystemIT.txt) |
-| SC-10 | Refusal under MIN_RESERVE | Pass | System (`RefusalSystemIT.sc10…`); UAT (3.6, 3.7) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.RefusalSystemIT.txt), [newman](evidence/uat-run.json) |
-| SC-11 | Operator refill | Pass | System (`RefusalSystemIT.sc11…`); UAT (4.2, 3.8) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.RefusalSystemIT.txt), [newman](evidence/uat-run.json) |
-| SC-12 | Invalid input / unknown machine | Pass | System (`ConfigureSystemIT.sc12…`); UAT (1.4, 2.2, 3.14) | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.ConfigureSystemIT.txt), [newman](evidence/uat-run.json) |
-| SC-13 | Two simultaneous plays; 200 parallel plays | Pass | System (`ConcurrencySystemIT`); UAT optional, not run | 2026-11-19 | [failsafe](evidence/failsafe/com.thilaga.fruitmachine.api.ConcurrencySystemIT.txt) |
+| SC-01 | Original 4-slot configuration | Pass | System (`ConfigureSystemIT.sc01…`); UAT (1.2) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.ConfigureSystemIT.txt), [newman](verification/evidence/uat-run.json) |
+| SC-02 | Variable configuration (10 slots, 300 colours, k = 3) | Pass | System (`ConfigureSystemIT.sc02…`); UAT not run | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.ConfigureSystemIT.txt) |
+| SC-03 | No prize | Pass | System (`PrizeSystemIT.sc03…`) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt) |
+| SC-04 | Jackpot | Pass | System (`PrizeSystemIT.sc04…`); UAT (3.5, one-slot) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt), [newman](verification/evidence/uat-run.json) |
+| SC-05 | Full house, odd float | Pass | System (`PrizeSystemIT.sc05…`) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt) |
+| SC-06 | Small prize | Pass | System (`PrizeSystemIT.sc06…`) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.PrizeSystemIT.txt) |
+| SC-07 | Shortfall under policy NONE | Pass | System (`FreePlaySystemIT.sc07…`) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.FreePlaySystemIT.txt) |
+| SC-08 | Free plays credited, rounded up | Pass | System (`FreePlaySystemIT.sc08…`) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.FreePlaySystemIT.txt) |
+| SC-09 | Using a free-play credit; zero balance refused | Pass | System (`FreePlaySystemIT.sc09…`) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.FreePlaySystemIT.txt) |
+| SC-10 | Refusal under MIN_RESERVE | Pass | System (`RefusalSystemIT.sc10…`); UAT (3.6, 3.7) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.RefusalSystemIT.txt), [newman](verification/evidence/uat-run.json) |
+| SC-11 | Operator refill | Pass | System (`RefusalSystemIT.sc11…`); UAT (4.2, 3.8) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.RefusalSystemIT.txt), [newman](verification/evidence/uat-run.json) |
+| SC-12 | Invalid input / unknown machine | Pass | System (`ConfigureSystemIT.sc12…`); UAT (1.4, 2.2, 3.14) | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.ConfigureSystemIT.txt), [newman](verification/evidence/uat-run.json) |
+| SC-13 | Two simultaneous plays; 200 parallel plays | Pass | System (`ConcurrencySystemIT`); UAT optional, not run | 2026-11-19 | [failsafe](verification/evidence/failsafe/com.thilaga.fruitmachine.api.ConcurrencySystemIT.txt) |
 
 ## Acceptance criteria (traceability: requirement → test → result)
 
