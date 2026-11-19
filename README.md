@@ -28,6 +28,17 @@ curl http://localhost:8080/actuator/health
 docker compose down -v      # stop and delete the data
 ```
 
+#### Check metrics (once the app is UP)
+
+When `/actuator/health` returns `UP`, check the metrics:
+
+```
+curl http://localhost:8080/actuator/metrics/fruitmachine.plays          # Actuator JSON
+curl http://localhost:8080/actuator/prometheus | grep fruitmachine_      # Prometheus format
+```
+
+Make a paid play (Postman, or `POST /api/v1/machines/{id}/plays`), then open Grafana at http://localhost:3000 (login `admin`, password `GRAFANA_ADMIN_PASSWORD` from `.env`) and open the "Fruit Machine Service" dashboard. The graphs refresh every 10 seconds and show plays per second, cumulative payout and free plays. Prometheus is at http://localhost:9090 and scrapes the app's `/actuator/prometheus`.
+
 Compose starts MySQL 8.0 and the app. The app connects as `fruitmachine_app`, which has rights on the `fruitmachine` schema only. Flyway still needs DDL rights on that schema to migrate at startup, so a separate migration user would be the next step if that matters. `.env` is gitignored; never commit it.
 
 ### Option A: dev launcher with its own MySQL (no setup)
