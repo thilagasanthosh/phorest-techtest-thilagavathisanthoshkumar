@@ -1,4 +1,4 @@
-# Start everything: cp .env.example .env, edit it, then: docker compose up -d --build
+# Start everything: docker compose --env-file .env.example up -d --build (local only; example passwords)
 services:
   mysql:
     image: mysql:8.0

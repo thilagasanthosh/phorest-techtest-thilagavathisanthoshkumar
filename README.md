@@ -22,8 +22,7 @@ git config core.hooksPath .githooks   # pre-commit formatter hook
 ### Option 0: Docker Compose (MySQL and app, one command)
 
 ```
-cp .env.example .env        # then replace both passwords in .env
-docker compose up -d --build
+docker compose --env-file .env.example up -d --build   # local only: uses the example passwords
 curl http://localhost:8080/actuator/health
 docker compose down -v      # stop and delete the data
 ```
