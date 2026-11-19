@@ -38,6 +38,8 @@ curl http://localhost:8080/actuator/prometheus | grep fruitmachine_      # Prome
 
 Make a paid play (Postman, or `POST /api/v1/machines/{id}/plays`), then open Grafana at http://localhost:3000 (login `admin`, password `GRAFANA_ADMIN_PASSWORD` from `.env`) and open the "Fruit Machine Service" dashboard. The graphs refresh every 10 seconds and show plays per second, cumulative payout and free plays. Prometheus is at http://localhost:9090 and scrapes the app's `/actuator/prometheus`.
 
+![Grafana "Fruit Machine Service" dashboard](docs/images/grafana-dashboard.png)
+
 Compose starts MySQL 8.0 and the app. The app connects as `fruitmachine_app`, which has rights on the `fruitmachine` schema only. Flyway still needs DDL rights on that schema to migrate at startup, so a separate migration user would be the next step if that matters. `.env` is gitignored; never commit it.
 
 ### Option A: dev launcher with its own MySQL (no setup)
@@ -124,6 +126,16 @@ newman run postman/fruitmachine-api.postman_collection.json --env-var baseUrl=ht
 ./mvnw test -Dtest=MachineInteractionApiTest#someName  # one method
 ./mvnw fmt:format                                      # fix formatting
 ```
+
+### Test results in CI
+
+Each CI run (`.github/workflows/ci.yml`) publishes a test summary:
+
+- **PR comment:** on pull requests, one comment per PR (updated on each push) with a table per test class: Tests, Failures, Errors, Skipped.
+- **Run summary:** the same table on the Actions run's **Summary** page.
+- **Artifact:** the raw surefire XML reports, in the `test-reports` artifact.
+
+A class with 0 in Failures, Errors and Skipped passed. The `build` job's status is the overall result. If the build fails before tests run, the table is empty or missing rows.
 
 ## 8. Project layout
 
