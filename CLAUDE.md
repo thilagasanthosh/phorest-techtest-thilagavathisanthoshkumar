@@ -13,7 +13,7 @@ Fruit Machine Service (Phorest tech test): a Spring Boot REST API that hosts con
 - `docs/01-business-requirements.docx`, `02-use-cases.docx`, `03-conceptual-design.docx`: source design documents.
 - `docs/verification.md`: empty; to be filled in Issue 7 (AC/scenario, how verified, result, date).
 
-NFR-16 ("one command starts service and data store") is only partially met after Issue 1: tests run automatically via Testcontainers, but the one-command Docker Compose startup lands in Issue 6.
+NFR-16 ("one command starts service and data store") is met by `docker compose up -d --build` (Issue 6); tests run automatically via Testcontainers and in CI.
 
 ## Commands
 

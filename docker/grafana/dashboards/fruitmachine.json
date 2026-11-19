@@ -1,0 +1,43 @@
+{
+  "uid": "fruitmachine",
+  "title": "Fruit Machine Service",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Plays per second (NFR-14)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(fruitmachine_plays_total[1m]))", "legendFormat": "plays/s" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Payout (pence, cumulative)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(fruitmachine_payout_pence_total)", "legendFormat": "paid out" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Free plays credited (cumulative)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(fruitmachine_freeplays_credited_total)", "legendFormat": "free plays" }
+      ]
+    }
+  ]
+}

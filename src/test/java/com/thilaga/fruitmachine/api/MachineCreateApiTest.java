@@ -91,4 +91,18 @@ class MachineCreateApiTest extends AbstractApiTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.type").value("validation-error"));
   }
+
+  @Test
+  void refusesColourCountAboveNfr02Limit() throws Exception { // NFR-02, NFR-17
+    String colours =
+        IntStream.range(0, 1_001).mapToObj(i -> "\"c" + i + "\"").collect(Collectors.joining(","));
+    postJson(
+            BASE,
+            "{\"slotCount\":4,\"colours\":["
+                + colours
+                + "],\"k\":2,\"playCostPence\":100,"
+                + "\"startingFloatPence\":1000}")
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.type").value("validation-error"));
+  }
 }
