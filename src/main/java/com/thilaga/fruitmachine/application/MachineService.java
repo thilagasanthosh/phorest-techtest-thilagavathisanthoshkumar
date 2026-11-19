@@ -7,7 +7,11 @@ import com.thilaga.fruitmachine.domain.MachineRepository;
 import com.thilaga.fruitmachine.domain.MachineState;
 import com.thilaga.fruitmachine.domain.PlayResult;
 import com.thilaga.fruitmachine.domain.SpinGenerator;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,12 +19,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MachineService {
 
+  private static final Logger log = LoggerFactory.getLogger(MachineService.class);
+
   private final MachineRepository repository;
   private final SpinGenerator spinGenerator;
+  private final Counter plays;
+  private final Counter payoutPence;
+  private final Counter freePlaysCredited;
 
-  public MachineService(MachineRepository repository, SpinGenerator spinGenerator) {
+  public MachineService(
+      MachineRepository repository, SpinGenerator spinGenerator, MeterRegistry meters) {
     this.repository = repository;
     this.spinGenerator = spinGenerator;
+    // shortcut: counters increment before commit; a commit failure after return leaves them ahead
+    // of the database. Money is checked in the database (AC-33), upgrade if counts must be exact.
+    this.plays = meters.counter("fruitmachine.plays");
+    this.payoutPence = meters.counter("fruitmachine.payout.pence");
+    this.freePlaysCredited = meters.counter("fruitmachine.freeplays.credited");
   }
 
   /** UC-01: creates a machine with zero free plays and zero totals. */
@@ -41,6 +56,16 @@ public class MachineService {
     PlayResult result = machine.play(UUID.randomUUID(), useFreePlay, spinGenerator);
     repository.save(id, machine);
     repository.recordPlay(id, result, useFreePlay);
+    plays.increment();
+    payoutPence.increment(result.paidPence());
+    freePlaysCredited.increment(result.freePlaysEarned());
+    log.info(
+        "play machine={} play={} prize={} paid={} freePlays={}",
+        id,
+        result.playId(),
+        result.prize(),
+        result.paidPence(),
+        result.freePlaysEarned());
     return result;
   }
 

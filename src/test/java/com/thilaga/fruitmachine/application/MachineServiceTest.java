@@ -26,6 +26,7 @@ import com.thilaga.fruitmachine.domain.NoFreePlayAvailableException;
 import com.thilaga.fruitmachine.domain.PlayResult;
 import com.thilaga.fruitmachine.domain.PrizeType;
 import com.thilaga.fruitmachine.domain.SpinGenerator;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -63,6 +64,7 @@ class MachineServiceTest {
   @Autowired private MachineService service;
   @Autowired private JdbcTemplate jdbc;
   @Autowired private TransactionTemplate tx;
+  @Autowired private MeterRegistry meters;
   @MockitoSpyBean private MachineRepository repository;
   @MockitoBean private SpinGenerator spinGenerator;
 
@@ -150,6 +152,32 @@ class MachineServiceTest {
 
     assertEquals(0, floatOf(id));
     assertEquals(1, countPlays());
+  }
+
+  @Test
+  void paidJackpotAdvancesPlayAndPayoutCounters() {
+    // NFR-14: one play counted, paid amount counted in pence
+    UUID id = service.configure(CONFIG);
+    spin(JACKPOT);
+    double plays = meters.counter("fruitmachine.plays").count();
+    double payout = meters.counter("fruitmachine.payout.pence").count();
+
+    service.play(id, false);
+
+    assertEquals(plays + 1, meters.counter("fruitmachine.plays").count());
+    assertEquals(payout + 1_100, meters.counter("fruitmachine.payout.pence").count());
+  }
+
+  @Test
+  void shortfallCreditAdvancesFreePlayCounter() {
+    // NFR-14 + AC-22: NONE machine, float 300p, small prize: shortfall 100p gives 1 free play
+    UUID id = service.configure(MachineConfig.of(4, COLOURS, 2, 100, 300, FloatPolicyType.NONE));
+    spin(SMALL_PRIZE);
+    double credited = meters.counter("fruitmachine.freeplays.credited").count();
+
+    service.play(id, false);
+
+    assertEquals(credited + 1, meters.counter("fruitmachine.freeplays.credited").count());
   }
 
   @Test
