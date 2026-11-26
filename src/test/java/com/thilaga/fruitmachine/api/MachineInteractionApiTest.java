@@ -1,6 +1,7 @@
 package com.thilaga.fruitmachine.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -8,6 +9,7 @@ import com.thilaga.fruitmachine.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 
 /** API-02 play, plus the refused-play and refill flow: BR-02, BR-07, AC-07 to AC-36 (API part). */
 @SpringBootTest
@@ -37,6 +39,49 @@ class MachineInteractionApiTest extends AbstractApiTest {
         .andExpect(jsonPath("$.paidWithFreePlay").value(false))
         .andExpect(jsonPath("$.status").value("ACTIVE"));
     assertEquals(1, count("play"));
+  }
+
+  @Test
+  void retriedPlayWithSameIdempotencyKeyPlaysOnce() throws Exception {
+    String id = createMachine(FULL_MIN_RESERVE);
+    spins.enqueue(SMALL_PRIZE);
+
+    String first =
+        mvc.perform(
+                post(BASE + "/" + id + PLAY)
+                    .header("Idempotency-Key", "retry-1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(PAID))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String retry =
+        mvc.perform(
+                post(BASE + "/" + id + PLAY)
+                    .header("Idempotency-Key", "retry-1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(PAID))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    assertEquals(first, retry);
+    assertEquals(1, count("play"));
+  }
+
+  @Test
+  void idempotencyKeyLongerThan128CharactersIsRefusedAndPlaysNothing() throws Exception {
+    String id = createMachine(FULL_MIN_RESERVE);
+
+    mvc.perform(
+            post(BASE + "/" + id + PLAY)
+                .header("Idempotency-Key", "k".repeat(129))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(PAID))
+        .andExpect(status().isBadRequest());
+    assertEquals(0, count("play"));
   }
 
   @Test
