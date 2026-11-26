@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,8 +39,14 @@ class MachineController {
   }
 
   @PostMapping("/{id}/plays")
-  PlayResponse play(@PathVariable UUID id, @Valid @RequestBody PlayRequest request) {
-    PlayResult result = service.play(id, request.useFreePlay());
+  PlayResponse play(
+      @PathVariable UUID id,
+      @Valid @RequestBody PlayRequest request,
+      @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+    if (key != null && (key.isEmpty() || key.length() > 128)) {
+      throw new InvalidIdempotencyKeyException();
+    }
+    PlayResult result = service.play(id, request.useFreePlay(), key);
     List<String> colours = service.read(id).machine().config().colours();
     return PlayResponse.from(result, colours);
   }

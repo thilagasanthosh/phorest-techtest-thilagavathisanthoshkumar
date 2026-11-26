@@ -29,4 +29,10 @@ public interface MachineRepository {
 
   /** Adds one refill to history and updates the refill total (D11). */
   void recordRefill(UUID id, long amountPence, long floatAfterPence);
+
+  /** The result stored for an earlier play with this Idempotency-Key on this machine, if any. */
+  Optional<PlayResult> findReplay(UUID id, String idempotencyKey);
+
+  /** Stores the result of a play under its Idempotency-Key, in the play's transaction. */
+  void recordReplay(UUID id, String idempotencyKey, PlayResult result);
 }

@@ -9,6 +9,7 @@ import com.thilaga.fruitmachine.domain.PlayResult;
 import com.thilaga.fruitmachine.domain.SpinGenerator;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,10 +53,29 @@ public class MachineService {
    */
   @Transactional
   public PlayResult play(UUID id, boolean useFreePlay) {
+    return play(id, useFreePlay, null);
+  }
+
+  /**
+   * As {@link #play(UUID, boolean)}. With an Idempotency-Key, a retry returns the stored result of
+   * the first play and does not spin, charge or count again. The machine lock taken first
+   * serialises concurrent retries, so the second one sees the first one's stored result.
+   */
+  @Transactional
+  public PlayResult play(UUID id, boolean useFreePlay, String idempotencyKey) {
     Machine machine = findForUpdateOrThrow(id);
+    if (idempotencyKey != null) {
+      Optional<PlayResult> replay = repository.findReplay(id, idempotencyKey);
+      if (replay.isPresent()) {
+        return replay.get();
+      }
+    }
     PlayResult result = machine.play(UUID.randomUUID(), useFreePlay, spinGenerator);
     repository.save(id, machine);
     repository.recordPlay(id, result, useFreePlay);
+    if (idempotencyKey != null) {
+      repository.recordReplay(id, idempotencyKey, result);
+    }
     plays.increment();
     payoutPence.increment(result.paidPence());
     freePlaysCredited.increment(result.freePlaysEarned());

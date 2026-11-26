@@ -81,6 +81,11 @@ class ApiExceptionHandler {
         HttpStatus.CONFLICT, "no-free-plays", "No free plays", "The free-play balance is 0.");
   }
 
+  @ExceptionHandler(InvalidIdempotencyKeyException.class)
+  ProblemDetail badIdempotencyKey(InvalidIdempotencyKeyException e) {
+    return validation(List.of(new Fault("Idempotency-Key", "must be 1 to 128 characters")));
+  }
+
   @ExceptionHandler(MachineBusyException.class)
   ResponseEntity<ProblemDetail> busy(MachineBusyException e) {
     ProblemDetail p =

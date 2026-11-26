@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 /** JPA adapter for the domain port. Runs inside the caller's transaction (MachineService). */
 @Repository
@@ -33,11 +35,19 @@ class JpaMachineRepository implements MachineRepository {
   private static final String LOCK_SQL = "SELECT * FROM machine WHERE id = ? FOR UPDATE";
 
   private final MachineJpaRepository machines;
+  private final PlayIdempotencyJpaRepository idempotency;
   private final EntityManager entityManager;
+  private final ObjectMapper json;
 
-  JpaMachineRepository(MachineJpaRepository machines, EntityManager entityManager) {
+  JpaMachineRepository(
+      MachineJpaRepository machines,
+      PlayIdempotencyJpaRepository idempotency,
+      EntityManager entityManager,
+      ObjectMapper json) {
     this.machines = machines;
+    this.idempotency = idempotency;
     this.entityManager = entityManager;
+    this.json = json;
   }
 
   @Override
@@ -122,6 +132,35 @@ class JpaMachineRepository implements MachineRepository {
     entity.totalRefilledPence += amountPence;
     entityManager.persist(
         MachineMapper.toRefillEntity(UUID.randomUUID(), id, amountPence, floatAfterPence));
+  }
+
+  @Override
+  public Optional<PlayResult> findReplay(UUID id, String idempotencyKey) {
+    return idempotency
+        .findByMachineIdAndIdempotencyKey(id, idempotencyKey)
+        .map(row -> readResult(row.result));
+  }
+
+  @Override
+  public void recordReplay(UUID id, String idempotencyKey, PlayResult result) {
+    entityManager.persist(
+        new PlayIdempotencyEntity(UUID.randomUUID(), id, idempotencyKey, writeResult(result)));
+  }
+
+  private PlayResult readResult(String value) {
+    try {
+      return json.readValue(value, PlayResult.class);
+    } catch (JacksonException e) {
+      throw new IllegalStateException("stored idempotent play result is unreadable", e);
+    }
+  }
+
+  private String writeResult(PlayResult result) {
+    try {
+      return json.writeValueAsString(result);
+    } catch (JacksonException e) {
+      throw new IllegalStateException("play result cannot be stored", e);
+    }
   }
 
   /** The row loaded by findForUpdate in the same transaction; changes flush at commit. */
